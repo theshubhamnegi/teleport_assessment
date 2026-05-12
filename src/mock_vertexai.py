@@ -1,9 +1,12 @@
 from sentence_transformers import SentenceTransformer
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Quick hack to mock Vertex's embedding model locally so we don't need GCP creds
 class MockTextEmbeddingModel:
     def __init__(self, model_id="all-MiniLM-L6-v2"):
-        print(f"Initializing MockTextEmbeddingModel using '{model_id}'")
+        logger.info(f"Initializing MockTextEmbeddingModel using '{model_id}'")
         self.model = SentenceTransformer(model_id)
 
     @classmethod
@@ -11,7 +14,7 @@ class MockTextEmbeddingModel:
         return cls() # ignoring the actual model name, just returning our local one
 
     def get_embeddings(self, text_list):
-        print(f"Encoding {len(text_list)} texts into embeddings.")
+        logger.info(f"Encoding {len(text_list)} texts into embeddings.")
         # vertex returns an object with a .values attribute, simulating that here
         raw_embs = self.model.encode(text_list)
         
@@ -24,7 +27,7 @@ class MockTextEmbeddingModel:
 
 class MockGenerativeModel:
     def __init__(self, model_name="gemini-1.5-pro-preview-0409"):
-        print(f"Initializing MockGenerativeModel mimicking '{model_name}'")
+        logger.info(f"Initializing MockGenerativeModel mimicking '{model_name}'")
         self.model_name = model_name
         
         # cheating a bit with hardcoded expansions for the assessment queries
@@ -35,18 +38,18 @@ class MockGenerativeModel:
         }
 
     def generate_content(self, prompt):
-        print(f"Generating content for prompt: '{prompt}'")
+        logger.info(f"Generating content for prompt: '{prompt}'")
         expanded = ""
         # scan prompt to see if we have a pre-canned expansion
         for query, expansion in self.cheat_sheet.items():
             if query.lower() in prompt.lower():
-                print("Found pre-canned expansion for query.")
+                logger.info("Found pre-canned expansion for query.")
                 expanded = expansion
                 break
         
         # fallback: just return longer words from the prompt
         if not expanded:
-            print("No pre-canned expansion found, falling back to dummy logic.")
+            logger.info("No pre-canned expansion found, falling back to dummy logic.")
             expanded = " ".join(w for w in prompt.split() if len(w) > 4)
 
         class ResponseMock:

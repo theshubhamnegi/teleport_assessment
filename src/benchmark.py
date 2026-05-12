@@ -1,11 +1,13 @@
-import os
+from src.utils.logger import get_logger
 from src.retriever import RAGPipeline
+
+logger = get_logger(__name__)
 
 def run_it():
     rag = RAGPipeline()
-    print("Loading and indexing data...")
+    logger.info("Loading and indexing data...")
     rag.build_index()
-    print("Done indexing.\n")
+    logger.info("Done indexing.\n")
 
     test_queries = [
         "How does the system handle peak load?",
@@ -16,7 +18,7 @@ def run_it():
     results = []
 
     for q in test_queries:
-        print(f"Running queries for: '{q}'")
+        logger.info(f"Running queries for: '{q}'")
         
         # basic search
         vanilla_hits = rag.search_vanilla(q, top_k=3)
@@ -69,7 +71,7 @@ def run_it():
         f.write("3. **Deployment**: Deploy it to an `IndexEndpoint`.\n")
         f.write("4. **App Code**: Swap out the `SimpleVectorStore` with an SDK call to `aiplatform.MatchingEngineIndexEndpoint.match()`. Then fetch the actual text payloads from something like Cloud SQL or Firestore based on the returned IDs.\n")
 
-    print(f"Finished! Check out the results in {out_file}")
+    logger.info(f"Finished! Check out the results in {out_file}")
 
 if __name__ == "__main__":
     run_it()

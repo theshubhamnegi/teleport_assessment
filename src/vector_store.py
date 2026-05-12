@@ -1,10 +1,13 @@
 import faiss
 import numpy as np
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class SimpleVectorStore:
     def __init__(self, dim=384):
         # using inner product + normalized vectors to get cosine similarity
-        print(f"Setting up FAISS IndexFlatIP with dimension {dim}")
+        logger.info(f"Setting up FAISS IndexFlatIP with dimension {dim}")
         self.dim = dim
         self.index = faiss.IndexFlatIP(self.dim)
         self.docs = []
@@ -18,17 +21,17 @@ class SimpleVectorStore:
 
     def add(self, embeddings, text_docs):
         # normalize before adding to faiss
-        print(f"Adding {len(text_docs)} documents to the vector store.")
+        logger.info(f"Adding {len(text_docs)} documents to the vector store.")
         norm_embs = self._normalize(embeddings)
         self.index.add(norm_embs)
         self.docs.extend(text_docs)
 
     def search(self, query_emb, k=3):
         if not self.docs:
-            print("Search called on an empty vector store.")
+            logger.error("Search called on an empty vector store.")
             return [], []
 
-        print(f"Searching FAISS index for top {k} results.")
+        logger.info(f"Searching FAISS index for top {k} results.")
         q_norm = self._normalize([query_emb])
         dists, idxs = self.index.search(q_norm, k)
         

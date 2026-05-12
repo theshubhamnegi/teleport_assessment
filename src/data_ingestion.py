@@ -1,3 +1,7 @@
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 # just some dummy data to play with
 DUMMY_DATA = [
     "Load balancing distributes incoming network traffic across multiple servers to ensure no single server bears too much demand. This improves responsiveness and availability of applications.",
@@ -18,5 +22,5 @@ class DataIngester:
 
     def load_data(self):
         # normally we'd pull from a db or file here, but keeping it simple for now
-        print(f"Loaded {len(self.docs)} dummy documents for ingestion.")
+        logger.info(f"Loaded {len(self.docs)} dummy documents for ingestion.")
         return self.docs

@@ -1,49 +1,44 @@
 import pytest
 import numpy as np
-from src.mock_vertexai import TextEmbeddingModel, GenerativeModel
-from src.vector_store import LocalVectorStore
-from src.retriever import RAGOrchestrator
+from src.mock_vertexai import MockTextEmbeddingModel, MockGenerativeModel
+from src.vector_store import SimpleVectorStore
+from src.retriever import RAGPipeline
 
-def test_mock_embedding_model():
-    model = TextEmbeddingModel()
-    texts = ["Hello world", "Testing embeddings"]
-    embeddings = model.get_embeddings(texts)
+def test_embedder_mock():
+    embedder = MockTextEmbeddingModel()
+    res = embedder.get_embeddings(["test 1", "test 2"])
     
-    assert len(embeddings) == 2
-    assert hasattr(embeddings[0], 'values')
-    assert len(embeddings[0].values) == 384 # all-MiniLM-L6-v2 dimension
+    assert len(res) == 2
+    assert hasattr(res[0], 'values')
+    assert len(res[0].values) == 384 # making sure the dim matches what we expect from MiniLM
 
-def test_mock_generative_model():
-    model = GenerativeModel()
-    prompt = "How does the system handle peak load?"
-    response = model.generate_content(prompt)
+def test_llm_mock():
+    llm = MockGenerativeModel()
+    resp = llm.generate_content("How does the system handle peak load?")
     
-    assert hasattr(response, 'text')
-    assert "load balancing" in response.text
+    # should pull from the hardcoded cheat sheet
+    assert "load balancing" in resp.text
 
-def test_local_vector_store():
-    store = LocalVectorStore(embedding_dim=4)
-    # create some dummy normalized embeddings
-    embeddings = [
+def test_faiss_store():
+    store = SimpleVectorStore(dim=4)
+    dummy_embs = [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0]
     ]
-    docs = ["doc1", "doc2"]
     
-    store.add_embeddings(embeddings, docs)
+    store.add(dummy_embs, ["doc_a", "doc_b"])
     
-    query = [1.0, 0.0, 0.0, 0.0]
-    results, scores = store.search(query, top_k=1)
+    hits, scores = store.search([1.0, 0.0, 0.0, 0.0], k=1)
     
-    assert len(results) == 1
-    assert results[0] == "doc1"
-    # Cosine similarity of identical normalized vectors is 1.0
-    assert np.isclose(scores[0], 1.0, atol=1e-5)
+    assert len(hits) == 1
+    assert hits[0] == "doc_a"
+    assert np.isclose(scores[0], 1.0, atol=1e-5) # cosine sim of identical vectors is 1
 
-def test_rag_orchestrator_integration():
-    orchestrator = RAGOrchestrator()
-    orchestrator.ingest()
+def test_full_pipeline():
+    rag = RAGPipeline()
+    rag.build_index()
     
-    results_a = orchestrator.retrieve_strategy_a("What is caching?", top_k=2)
-    assert len(results_a) == 2
-    assert any("Caching" in doc for doc in results_a)
+    hits = rag.search_vanilla("What is caching?", top_k=2)
+    assert len(hits) == 2
+    # quick check to make sure it's returning something relevant
+    assert any("Caching" in h for h in hits)
